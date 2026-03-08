@@ -108,6 +108,7 @@ Full-stack MERN application for labour attendance, monthly billing, and role-bas
 This repo is configured for:
 - Backend on Render using [`render.yaml`](./render.yaml)
 - Frontend on Vercel using [`client/vercel.json`](./client/vercel.json)
+- Frontend on Netlify using [`netlify.toml`](./netlify.toml) + [`client/public/_redirects`](./client/public/_redirects)
 
 ### 1) Deploy Backend on Render
 1. Push this project to GitHub.
@@ -123,30 +124,47 @@ This repo is configured for:
    - `JWT_SECRET=<strong random secret>`
    - `JWT_EXPIRES_IN=7d`
    - `CLIENT_URL=<your vercel production url or custom frontend domain>`
+   - `SEED_ADMIN_NAME=<super admin name>`
+   - `SEED_ADMIN_EMAIL=<super admin email>`
+   - `SEED_ADMIN_PASSWORD=<super admin password>`
 5. Deploy and verify: `https://<render-service>/api/health`
+6. Startup behavior: backend syncs super admin from env on each start:
+   - If `SEED_ADMIN_EMAIL` does not exist, it is created as `super_admin`.
+   - If it exists, name/role/password are updated from env.
 
 ### 2) Deploy Frontend on Vercel
 1. In Vercel, import the same repo.
-2. Set **Root Directory** to `client`.
-3. Confirm build settings:
+2. Keep project root as repo root.
+3. Build settings are already configured in [`vercel.json`](./vercel.json):
+   - Install command: `npm install`
    - Build command: `npm run build`
-   - Output directory: `dist`
+   - Output directory: `client/dist`
 4. Add env variable:
    - `VITE_API_URL=https://<render-service>/api`
 5. Deploy and open the Vercel URL.
 
-### 3) Final CORS Step
-After Vercel gives your final production domain:
+### 3) Deploy Frontend on Netlify
+1. In Netlify, create **New site from Git** and select this repo.
+2. Keep project root as repo root (do not set base dir manually). `netlify.toml` already handles:
+   - Build command: `npm run build`
+   - Publish directory: `client/dist`
+   - SPA redirect to `index.html`
+3. Add env variable:
+   - `VITE_API_URL=https://<render-service>/api`
+4. Deploy and open the Netlify URL.
+
+### 4) Final CORS Step
+After Vercel or Netlify gives your final frontend domain:
 1. Update Render env `CLIENT_URL` with that exact domain.
 2. Redeploy Render backend.
 
-### 4) Production Database (Real-life)
+### 5) Production Database (Real-life)
 - Use a managed MongoDB cluster (commonly MongoDB Atlas) for `MONGO_URI`.
 - Restrict DB network access and create a dedicated app user with strong password.
 - Enable regular backups/snapshots in your DB provider.
 
-### 5) Go-live Checklist
-- Set custom domains on Vercel and Render.
+### 6) Go-live Checklist
+- Set custom domains on frontend host (Vercel/Netlify) and Render.
 - Keep `JWT_SECRET` strong and private.
 - Seed one super admin (`npm run seed:admin`) only once, then rotate default credentials.
 - Use HTTPS-only URLs in `CLIENT_URL` and `VITE_API_URL`.
